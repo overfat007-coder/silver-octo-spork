@@ -1,4 +1,0 @@
-{
-  "shard_0": "postgresql://smartflow:smartflow@postgres-shard0:5432/smartflow",
-  "shard_1": "postgresql://smartflow:smartflow@postgres-shard1:5432/smartflow"
-}

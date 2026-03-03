@@ -1,1 +1,0 @@
-"""PropTech domain."""
