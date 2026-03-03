@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartflow-shards
+  labels: { app: smartflow }
+data:
+  shards.json: |
+    {
+      "shard_0": "postgresql://smartflow:$(POSTGRES_PASSWORD)@postgres-shard0:5432/smartflow",
+      "shard_1": "postgresql://smartflow:$(POSTGRES_PASSWORD)@postgres-shard1:5432/smartflow"
+    }
