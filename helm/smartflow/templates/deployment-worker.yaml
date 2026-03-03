@@ -1,0 +1,14 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: smartflow-worker }
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector: { matchLabels: { app: smartflow-worker } }
+  template:
+    metadata: { labels: { app: smartflow-worker } }
+    spec:
+      containers:
+        - name: worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["celery", "-A", "app.tasks.celery_app.celery_app", "worker", "-l", "info"]
+          envFrom: [{ secretRef: { name: smartflow-secrets } }]
