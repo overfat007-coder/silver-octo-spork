@@ -1,0 +1,13 @@
+image:
+  repository: smartflow
+  tag: latest
+  pullPolicy: IfNotPresent
+
+fastapi:
+  replicas: 3
+worker:
+  replicas: 2
+
+secrets:
+  jwtSecret: change-me
+  postgresPassword: smartflow
