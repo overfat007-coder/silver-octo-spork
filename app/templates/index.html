@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartFlow Enterprise</title>
+  <style>
+    body{font-family:Arial;background:#f5f7fb;margin:0}
+    .container{max-width:980px;margin:20px auto;background:#fff;padding:20px;border-radius:8px}
+    input,textarea,button{width:100%;padding:10px;margin:6px 0}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .task{border:1px solid #ddd;padding:10px;border-radius:6px;margin:8px 0}
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>SmartFlow Enterprise</h1>
+  <div class="grid">
+    <div>
+      <h3>Регистрация</h3>
+      <input id="regUsername" placeholder="username" />
+      <input id="regEmail" placeholder="email" />
+      <input id="regPassword" type="password" placeholder="password" />
+      <button id="registerBtn">Register</button>
+    </div>
+    <div>
+      <h3>Логин</h3>
+      <input id="loginValue" placeholder="username или email" />
+      <input id="loginPassword" type="password" placeholder="password" />
+      <button id="loginBtn">Login</button>
+      <div id="tokenInfo"></div>
+    </div>
+  </div>
+
+  <h3>Новый проект</h3>
+  <input id="projectName" placeholder="Название проекта" />
+  <button id="projectBtn">Создать проект</button>
+
+  <h3>Новая задача</h3>
+  <input id="title" placeholder="Заголовок" />
+  <textarea id="description" placeholder="Описание"></textarea>
+  <input id="dueDate" type="datetime-local" />
+  <input id="teamId" type="number" placeholder="team_id (опц.)" />
+  <button id="taskBtn">Создать задачу</button>
+
+  <h3>Задачи</h3>
+  <button id="reloadBtn">Обновить</button>
+  <div id="tasks"></div>
+</div>
+<script>
+const api='/api/v1';
+let accessToken='';
+
+async function apiFetch(url, opts={}){
+  opts.headers = opts.headers || {};
+  if(accessToken) opts.headers['Authorization'] = `Bearer ${accessToken}`;
+  if(!(opts.body instanceof FormData)) opts.headers['Content-Type'] = 'application/json';
+  return fetch(api+url, opts);
+}
+
+document.getElementById('registerBtn').onclick = async () => {
+  await apiFetch('/auth/register', {method:'POST', body: JSON.stringify({
+    username: regUsername.value, email: regEmail.value, password: regPassword.value
+  })});
+  alert('Зарегистрировано');
+};
+
+document.getElementById('loginBtn').onclick = async () => {
+  const res = await apiFetch('/auth/login', {method:'POST', body: JSON.stringify({
+    login: loginValue.value, password: loginPassword.value
+  })});
+  const data = await res.json();
+  accessToken = data.access_token || '';
+  tokenInfo.textContent = accessToken ? 'Авторизован' : 'Ошибка логина';
+  await loadTasks();
+};
+
+document.getElementById('projectBtn').onclick = async () => {
+  await apiFetch('/projects/', {method:'POST', body: JSON.stringify({name: projectName.value})});
+  alert('Проект создан');
+};
+
+document.getElementById('taskBtn').onclick = async () => {
+  const payload = {
+    title: title.value,
+    description: description.value,
+    due_date: dueDate.value || null,
+    team_id: teamId.value ? Number(teamId.value) : null
+  };
+  await apiFetch('/tasks/', {method:'POST', body: JSON.stringify(payload)});
+  await loadTasks();
+};
+
+document.getElementById('reloadBtn').onclick = loadTasks;
+
+async function loadTasks(){
+  const res = await apiFetch('/tasks/');
+  const root = document.getElementById('tasks');
+  if(!res.ok){ root.innerHTML='<p>Ошибка загрузки</p>'; return; }
+  const data = await res.json();
+  root.innerHTML='';
+  data.forEach(t => {
+    const el=document.createElement('div');
+    el.className='task';
+    el.innerHTML = `<b>${t.title}</b><div>${(t.description||'').slice(0,120)}</div><div>priority: ${t.priority}, category: ${t.category||'-'}</div>`;
+    root.appendChild(el);
+  })
+}
+</script>
+</body>
+</html>
