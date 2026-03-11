@@ -1,0 +1,9 @@
+{
+  "symbol": "BTC/USDT",
+  "notional_usdt": 1000,
+  "taker_fee_buy_pct": 0.1,
+  "taker_fee_sell_pct": 0.1,
+  "transfer_cost_pct": 0.05,
+  "min_spread_pct": 0.2,
+  "postgres_dsn": "postgresql://smartflow:smartflow@localhost:5432/smartflow"
+}

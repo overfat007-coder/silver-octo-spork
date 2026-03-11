@@ -1,0 +1,3 @@
+# Amazon URLs list
+https://www.amazon.com/dp/B0EXAMPLE1
+https://www.amazon.com/dp/B0EXAMPLE2

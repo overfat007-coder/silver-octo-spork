@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tic-Tac-Toe 5x5</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#0f172a; color:#e2e8f0; margin:0; display:flex; justify-content:center; }
+    .wrap { width: 540px; margin: 24px; }
+    #board { display:grid; grid-template-columns: repeat(5, 90px); gap:8px; margin-top:16px; }
+    .cell { width:90px; height:90px; font-size:38px; border:none; background:#1e293b; color:#e2e8f0; border-radius:8px; cursor:pointer; }
+    .cell:hover { background:#334155; }
+    #status { margin-top:12px; font-size:18px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Крестики-нолики 5x5</h1>
+    <div>Матчмейкинг и комнаты через WebSocket. Таймер хода: 30 секунд.</div>
+    <div id="status">Подключение…</div>
+    <div id="timer"></div>
+    <div id="board"></div>
+  </div>
+
+  <script>
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const timerEl = document.getElementById('timer');
+    let board = Array.from({length:5}, () => Array.from({length:5}, () => ''));
+    let mySymbol = null;
+    let turn = 'X';
+    let deadline = Date.now() + 30000;
+
+    function render() {
+      boardEl.innerHTML = '';
+      for (let r=0;r<5;r++) {
+        for (let c=0;c<5;c++) {
+          const btn = document.createElement('button');
+          btn.className = 'cell';
+          btn.textContent = board[r][c];
+          btn.onclick = () => {
+            if (board[r][c]) return;
+            ws.send(JSON.stringify({type:'move', row:r, col:c}));
+          };
+          boardEl.appendChild(btn);
+        }
+      }
+    }
+
+    function updateTimer() {
+      const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      timerEl.textContent = `Осталось на ход: ${left} сек.`;
+    }
+    setInterval(updateTimer, 250);
+
+    const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+    const ws = new WebSocket(`${protocol}://${location.host}/api/v1/games/tictactoe/ws`);
+
+    ws.onmessage = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'joined') {
+        mySymbol = msg.symbol;
+        statusEl.textContent = `Вы играете за ${mySymbol}`;
+      } else if (msg.type === 'waiting_for_opponent') {
+        statusEl.textContent = 'Ищем соперника…';
+      } else if (msg.type === 'match_found') {
+        turn = msg.turn;
+        deadline = Date.now() + 30000;
+        statusEl.textContent = `Матч найден! Ход: ${turn}`;
+      } else if (msg.type === 'move') {
+        board = msg.board;
+        turn = msg.turn;
+        deadline = Date.now() + 30000;
+        render();
+        statusEl.textContent = msg.game_over ? `Игра завершена. Победитель: ${msg.winner}` : `Ход: ${turn}`;
+      } else if (msg.type === 'timeout') {
+        statusEl.textContent = `Время вышло. Победитель: ${msg.winner}`;
+      } else if (msg.type === 'game_over') {
+        board = msg.board;
+        render();
+        statusEl.textContent = `Игра завершена. Победитель: ${msg.winner}`;
+      } else if (msg.type === 'error') {
+        statusEl.textContent = `Ошибка: ${msg.detail}`;
+      }
+    };
+
+    ws.onclose = () => { statusEl.textContent = 'Соединение закрыто'; };
+    render();
+  </script>
+</body>
+</html>

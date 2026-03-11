@@ -1,0 +1,21 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata: { name: smartflow-api }
+spec:
+  host: smartflow-api
+  subsets:
+    - { name: stable, labels: { version: stable } }
+    - { name: canary, labels: { version: canary } }
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata: { name: smartflow-api }
+spec:
+  hosts: ["smartflow.local"]
+  gateways: ["mesh"]
+  http:
+    - route:
+      - destination: { host: smartflow-api, subset: stable, port: { number: 80 } }
+        weight: 90
+      - destination: { host: smartflow-api, subset: canary, port: { number: 80 } }
+        weight: 10
